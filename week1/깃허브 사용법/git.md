@@ -1,5 +1,4 @@
 # Git
----
 <br>
 
 
@@ -19,7 +18,6 @@
 <br>
 
 
----
 # 2. Git 사용법
 ## 2-0. CLI 사용
 #### 윈도우에서 제공하는 CLI는 전부 사용 가능
@@ -130,6 +128,7 @@ git log --oneline
   - **커밋 해쉬** : 커밋을 구별하는 ID
   - **커밋 로그** : 커밋 기록
 <br>
+
 #### 커밋의 변경 세부사항 확인하기
 ```shell
 git diff {commit_hash_ID}
@@ -168,7 +167,7 @@ git revert {commit hash ID}
 <br>
 
 
----
+
 # 3. Git의 Branch
 
 ## 3-0. 브랜치 개념
@@ -277,7 +276,7 @@ git reset {commit_hash_ID}
 <br>
 
 
----
+
 # 4. Git의 Stash
 ### Stash
   - 현재 작업 중인 파일들을 다른 곳에 따로 저장하는 기능
