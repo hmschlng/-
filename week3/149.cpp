@@ -1,3 +1,5 @@
+// 음료수 얼려 먹기
+// 0이 뭉쳐있는 것을 구하는 문제
 #include <iostream>
 #include <deque>
 
@@ -32,7 +34,7 @@ int main()
 	char c;
 	std::cin >> n >> m;
 	std::cout << n << m;
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < n; i++) // 0이 뭉쳐있는 경우만 찾는 것이면 for문이 훨씬 빠르다.
 	{
 		for (int j = 0; j < m; j++)
 		{
@@ -40,7 +42,7 @@ int main()
 			arr[i][j] = int(c - 48);
 		}
 	}
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < n; i++) // 0이 뭉쳐있는 경우만 찾는 것이면 for문이 훨씬 빠르다.
 	{
 		for (int j = 0; j < m; j++)find(i, j, n, m, true);
 	}

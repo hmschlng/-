@@ -1,8 +1,10 @@
+// 미로탈출
+// 미로를 탈출하는 최소 루트를 구하는 문제
 #include <iostream>
 #include <queue>
 
-int arr[201][201];
-int map[201][201];
+int arr[201][201]; // 미로를 받는 배열
+int map[201][201]; // 지나갔는지 체크하는 배열
 int count;
 
 int bfs(int i, int j, int N, int M);
