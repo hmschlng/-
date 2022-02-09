@@ -1,36 +1,42 @@
-package _1210_자물쇠와열쇠._1210_자물쇠와열쇠_이방환;
-
+package _1210_자물쇠와열쇠.myCode;
 
 import java.util.*;
 
-public class Solution {
+class Point {
+  Integer x;
+  Integer y;
+
+  public Point(Integer x, Integer y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+class Solution {
+  public static ArrayList<int[][]> rotatedKeyList = new ArrayList<>();
+
   public boolean solution(int[][] key, int[][] lock) {
-
-    // 기존 열쇠와 열쇠를 90도, 180도, 270도씩 회전시킨 버전을 준비
-    List<int[][]> keys = new ArrayList<>();
-    keys.add(key);
-    keys.add(rotateKey(key, 90));
-    keys.add(rotateKey(key, 180));
-    keys.add(rotateKey(key, 270));
-
-
-    // 열쇠를 회전시켜가며 자물쇠와 비교
-    for (int[][] k : keys) {
-      // 자물쇠 홈의 직경과 열쇠의 직경 계산
-      // 여기서 직경은 자물쇠외 홈이나 열쇠의 돌기를 감싸는 직사각형의 최소 범위이다.
-      int[] lockHole = getDiameter(lock, "lock");
-      int[] keySize = getDiameter(k, "key");
-
-      // 회전된 열쇠들을 자물쇠와 비교해, 일치하면 true
-      if(isMatch(k, lock, lockHole, keySize)) {
-        return true;
-      }
-
+    for (int i = 0; i < 360; i += 90) {
+      rotatedKeyList.add(rotateKey(key,i));
     }
-    // 모든 경우에 일치하지 않는 경우 false
+
+    //생성한 4개의 키의 면적을 최소화
+    for (int i = 0; i < rotatedKeyList.size(); i++) {
+      int[][] trimmed = setKeyBoundary(rotatedKeyList.remove(0));
+      if(trimmed != null) {
+        rotatedKeyList.add(trimmed);
+      }
+    }
+
+    //각 키에 대해서 일치하면 true 리턴
+    for (int[][] rotated : rotatedKeyList) {
+      if(isMatch(rotated, lock))
+        return true;
+    }
+
+    //모든 키가 일치하지 않으면 false 리턴
     return false;
   }
-
 
   private int[][] rotateKey(int[][] key, int degree) {
     int numOfRotates = 0;
@@ -60,81 +66,123 @@ public class Solution {
     return key;
   }
 
+  private int[][] setKeyBoundary(int[][] thing) {
+    Point min = new Point(21, 21);
+    Point max = new Point(0,0);
 
-  private int[] getDiameter(int[][] thing, String type) {
-    // diameter[0] = 열쇠의 돌기나 자물쇠의 홈이 나오는 직사각형 직경의 최소 행
-    // diameter[1] = 최소 열
-    // diameter[2] = 최대 행
-    // diameter[3] = 최대 열
-    int[] diameter = {21,21,0,0};
-
-    // thing이 자물쇠인지 열쇠인지 판단
-    int hit = 0;
-    if(type.equals("lock")) {
-      hit = 0;
-    }
-    else if(type.equals("key")) {
-      hit = 1;
-    }
-
-    // hit(열쇠의 경우 돌기, 자물쇠의 경우 홈)이 등장하는 좌표의 최대값, 최소값을 구한다.
     for (int i = 0; i < thing.length; i++) {
-      for (int j = 0; j < thing.length; j++) {
-        if(thing[i][j] == hit && i <= diameter[0]) {
-          diameter[0] = i;
-        }
-        if(thing[i][j] == hit && j <= diameter[1]) {
-          diameter[1] = j;
-        }
-        if(thing[i][j] == hit && i >= diameter[2]) {
-          diameter[2] = i;
-        }
-        if(thing[i][j] == hit && j >= diameter[3]) {
-          diameter[3] = j;
+      for (int j = 0; j < thing[0].length; j++) {
+        if(thing[i][j] == 1) {
+          if(min.x > i) min.x = i;
+          if(min.y > j) min.y = j;
+          if(max.x < i) max.x = i;
+          if(max.y < j) max.y = j;
         }
       }
     }
-    return diameter;
+
+    //열쇠의 돌기가 없거나 자물쇠의 홈이 없는 경우 빈 배열 리턴
+    if(max.x - min.x < 0 || max.y - min.y < 0) {
+      return new int[1][1];
+    }
+
+    int[][] result = new int[max.x - min.x + 1][max.y - min.y + 1];
+    for (int i = min.x; i <= max.x; i++) {
+      for (int j = min.y; j <= max.y; j++) {
+        result[i - min.x][j - min.y] = thing[i][j];
+      }
+    }
+
+    return result;
   }
 
+  private boolean isMatch(int[][] key, int[][] lock) {
+    Point keyLimit = new Point(key.length-1, key[0].length-1);
+    Point lockLimit = new Point(lock.length-1, lock[0].length-1);
 
-  private boolean isMatch(int[][] key, int[][] lock, int[] lockHole, int[] keySize) {
-    boolean match = true;
+    //비교를 위한 2차원 평면공간 생성
+    int[][] space2D = new int[keyLimit.x*2 + lockLimit.x + 1][keyLimit.y * 2 + lockLimit.y + 1];
 
-    int lock_W = lockHole[3] - lockHole[1] + 1; //자물쇠구멍 가로
-    int lock_H = lockHole[2] - lockHole[0] + 1; //자물쇠구멍 세로
-    int key_W = keySize[3] - keySize[1] + 1; //열쇠 가로
-    int key_H = keySize[2] - keySize[0] + 1; //열쇠 세로
+    // key 의 (0,0)이 space2D의 어디부터 시작하는지를 알려주는 좌표
+    // key 의 (0,0)은 space2D의 (startPos.x , startPos.y)에 대입된다.
+    Point startPos = new Point(0,0);
 
-    // 자물쇠의 직경이 열쇠의 직경보다 큰 경우 false
-    if(lock_W > key_W && lock_H > key_H) {
-      return false;
-    }
+    for (startPos.x = 0; startPos.x <= keyLimit.x + lockLimit.x; startPos.x++) {
+      for (startPos.y = 0; startPos.y <= keyLimit.y + lockLimit.y ; startPos.y++) {
 
-    // 열쇠와 자물쇠의 칸들을 비교하며 맞지 않으면 false
-    // 불일치 조건 1. 둘 다 홈일 경우
-    //            2. 둘 다 돌기일 경우
-    int[] keyPos = keySize.clone();
-
-    for (int i = lockHole[0]; i <= lockHole[2]; i++) {
-      keyPos[1] = keySize[1];
-      for (int j = lockHole[1]; j <= lockHole[3]; j++) {
-        int keyPart = key[keyPos[0]][keyPos[1]];
-        int lockPart = lock[i][j];
-
-        //두 값이 같은 경우가 하나라도 있으면
-        if(keyPart == lockPart) {
-          match = false;
-          break;
+        //자물쇠를 평면공간 정가운데에 세팅
+        for (int i = keyLimit.x; i <= keyLimit.x + lockLimit.x; i++) {
+          for (int j = keyLimit.y; j <= keyLimit.y + lockLimit.y; j++) {
+            space2D[i][j] = lock[i - keyLimit.x][j - keyLimit.y];
+          }
         }
-        keyPos[1]++;
-      }
 
-      if(!match) break;
-      keyPos[0]++;
-    } //모든 칸에서 홈과 돌기가 맞물렸다면 true
+        //열쇠 끼워보기
+        for (int i = 0; i <= keyLimit.x; i++) {
+          for (int j = 0; j <= keyLimit.y; j++) {
+            space2D[i + startPos.x][j + startPos.y] += key[i][j];
+          }
+        }
 
-    return match;
+        // 일치하는지 확인
+        boolean match = true;
+        for (int i = keyLimit.x; i <= keyLimit.x + lockLimit.x; i++) {
+          for (int j = keyLimit.y; j <= keyLimit.y + lockLimit.y; j++) {
+            if(space2D[i][j] != 1) {
+              match = false;
+              break;
+            }
+          } if(!match) break;
+        }
+
+        //일치한다면 그자리에서 true 리턴
+        if(match) {
+          return true;
+        }
+        //일치하지 않으면
+        else {
+          //space2D 에 key 를 대입한 자리를 1로 다시 초기화
+          for (int i = 0; i <= keyLimit.x; i++) {
+            for (int j = 0; j <= keyLimit.y; j++) {
+              space2D[i + startPos.x][j + startPos.y] = 1;
+            }
+          }
+        }
+
+      } // loop(scope.y)
+    } // loop(scope.x)
+
+    // 맞는 경우가 없었다면 false
+    return false;
   }
 }
-// 풀이 시간 : 2시간 20분
+
+//---------------------------------------------------------------------------------------------//
+
+class Main {
+  public static void main(String[] args) {
+    int[][] lock = {
+            {1,1,1,1,1,1},
+            {1,1,1,1,1,1},
+            {1,0,1,0,1,1},
+            {1,1,0,0,1,1},
+            {1,1,1,1,1,1},
+            {1,1,1,1,1,1}
+/*            {1,1,1},
+            {1,1,0},
+            {1,0,1}*/
+    };
+    int[][] key = {
+            {0,1,1,0},
+            {0,0,1,0},
+            {0,1,0,0},
+            {0,0,0,0}
+/*            {0,0,0},
+            {1,0,0},
+            {0,1,1}*/
+    };
+
+    Solution s = new Solution();
+    System.out.println(s.solution(key, lock));
+  }
+}

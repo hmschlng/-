@@ -1,83 +1,110 @@
-package _1209_문자열압축._1209_문자열압축_이방환;
+package _1209_문자열압축.newCode;
 
 import java.util.*;
 
-public class Solution {
-  public int solution(String s) {
-    //cut : 문자열을 분할할 단위
-    //result : 압축된 문자열의 길이
-    int cut = 1;
-    List<Integer> result = new ArrayList<>();
+//부분문자열 클래스
+class SubStr {
+  String str; //부분문자열
+  int count;  //반복횟수
 
-    //자르는 단위가 문자열의 길이를 넘어서면 종료
-    while(cut < s.length()) {
-
-      //count : 부분 문자열의 반복 횟수
-      //add : 압축된 부분 문자열 앞에 첨가되는 숫자 개수
-      //length : 압축된 부분 문자열의 문자길이
-      int count = 0, add = 0, length = 0;
-
-      //prev : 이전에 조회한 부분 문자열
-      //now : 현재 조회하고 있는 부분 문자열
-      String prev = new String(),
-              now = new String();
-
-      // s를 cut만큼 잘라가며 순차 탐색
-      for (int i = 0; i < s.length() ; i += cut) {
-        // 1. s의 남은 부분이 분할 단위인 cut 보다 작거나 같은 경우
-        if(s.substring(i).length() <= cut) {
-          // s의 남은 부분과 이전에 조회한 문자열이 같은 경우
-          //  - 반복 횟수 증가
-          //  - 첨가되는 숫자 개수 증가
-          if(s.substring(i).equals(prev)) {
-            count++;
-            add++;
-          }
-          // 다른 경우
-          // - 나머지 문자열의 길이를 length에 추가
-          //
-          else {
-            length += s.substring(i).length();
-            if(count > 1) {
-              add++;
-            }
-          }
-        }
-        // 2. s의 남은 부분이 충분하면
-        else {
-          // cut 단위만큼 부분 문자열 추출
-          now = s.substring(i,i+cut);
-          //동일한 문자열이면 반복 횟수 증가
-          if(prev.equals(now)) {
-            count++;
-          }
-          //이전과 문자열과 현재 문자열이 다른 경우
-          // - 문자열의 길이를 length에 추가
-          // - 반복 횟수 = 1로 초기화
-          //연속으로 2번 이상 나온 문자열이면
-          // - 첨가되는 숫자 개수 증가
-          else {
-            if(count > 1) {
-              add++;
-            }
-            length += cut;
-            count = 1;
-          }
-        }
-        prev = now;
-      }
-      //분할 단위 증가
-      cut++;
-
-      // 압축된 문자열과 첨가되는 숫자의 개수를 더해 result에 저장
-      result.add(length+add);
-    }
-
-    //압축된 문자열들의 길이를 오름차순으로 정렬
-    Collections.sort(result);
-
-    //최소값 출력
-    return result.get(0);
+  public SubStr(String str, int count) {
+    this.str = str;
+    this.count = count;
   }
 }
-// 시간 초과
+
+class Solution {
+  private ArrayList<SubStr> substrings = new ArrayList<>(); // 잘린 부분문자열들이 저장된 배열
+  private ArrayList<Integer> lengths = new ArrayList<>(); // 압축된 문자열의 길이들
+
+  public int solution(String s) {
+    //s의 길이가 1이면 1 리턴
+    if(s.length() == 1) return 1;
+
+    //문자열을 자르는 단위
+    int size = 1;
+
+    //문자열의 절반 + 1까지 단위(size)를 증가시키며 반복
+    while(size <= s.length()/2 + 1) {
+      //첫 번째 부분분자열을 substrings 에 추가
+      String substring = s.substring(0, size);
+      substrings.add(new SubStr(substring, 1));
+
+      //단위만큼씩 s를 자른다.
+      for (int i = size; i < s.length(); i += size) {
+        //마지막 부분문자열의 처리
+        if(i + size >= s.length()) {
+          substring = s.substring(i);
+          process(substring);
+          break;
+        }
+        //부분문자열의 처리
+        substring = s.substring(i, i+size);
+        process(substring);
+      }
+
+      //압축된 문자열의 길이를 계산 후 length 에 저앙
+      Integer length = 0;
+      for(SubStr sub : substrings) {
+        length += sub.str.length();
+        // 2회 이상 반복된 부분문자열에 대해 숫자의 자릿수 추가
+        length += (1 < sub.count) ?
+                Integer.toString(sub.count).length() : 0;
+      }
+      lengths.add(length);
+
+      //substrings 비우기
+      substrings.clear();
+
+      //단위 증가
+      size++;
+    }
+
+    //전체 문자열의 길이 추가
+    lengths.add(s.length());
+
+    //lengths 의 최소값 구하기 (length 비우기)
+    Collections.sort(lengths);
+    int min = lengths.get(0);
+
+    //lengths 초기화
+    lengths.clear();
+
+    //최소값 리턴
+    return min;
+  }
+
+  //부분문자열을 처리하는 메소드
+  private void process(String str) {
+    //마지막 부분문자열
+    SubStr prev = substrings.get(substrings.size()-1);
+    //prev.str 이 str 과 같으면 prev.count 추가
+    if(prev.str.equals(str)) {
+      prev.count++;
+    }
+    //str 이 새로운 문자열이면 substrings 에 새로운 원소 추가
+    else {
+      substrings.add(new SubStr(str, 1));
+    }
+  }
+}
+
+//-------------------------------------------------------------------------
+
+class Main {
+  public static void main(String[] args) {
+    String s1 = "abababababababababababababababababababababababababababababab";
+    String s2 = "ababcdcdababcdcd";
+    String s3 = "abcabcdede";
+    String s4 = "abcabcabcabcdededededede";
+    String s5 = "xababcdcdababcdcd";
+
+    Solution s = new Solution();
+
+//    System.out.println(s.solution(s1));
+    System.out.println(s.solution(s2));
+    System.out.println(s.solution(s3));
+    System.out.println(s.solution(s4));
+    System.out.println(s.solution(s5));
+  }
+}
