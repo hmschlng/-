@@ -7,7 +7,7 @@ int arr[100][100];
 
 int count = 0;
 
-void find(int i, int j, int n, int m, bool check)
+void find(int i, int j, int n, int m, bool check) // 범위 세는 함수
 {
 	bool bcheck = check;
 	std::deque<int> de;
